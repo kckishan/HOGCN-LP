@@ -7,22 +7,16 @@ from models import MixHopNetwork
 from sklearn.metrics import roc_auc_score, average_precision_score, f1_score
 import os
 import time
-import matplotlib.pyplot as plt
 
 
 class Trainer(object):
     """
     Class for training the neural network.
     :param args: Arguments object.
-    :param graph: NetworkX graph.
-    :param features: Feature sparse matrix.
-    :param target: Target vector.
-    :param base_run: Loss calculation behavioural flag.
     """
 
-    def __init__(self, args, base_run):
+    def __init__(self, args):
         self.args = args
-        self.base_run = base_run
         self.device = self.args.device
         self.setup_features()
         self.model = MixHopNetwork(self.args, self.feature_number, 1)
@@ -80,7 +74,6 @@ class Trainer(object):
         """
         no_improvement = 0
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.args.learning_rate)
-        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, mode="min", patience=5)
 
         max_auc = 0
         loss_history = []
@@ -101,11 +94,7 @@ class Trainer(object):
                 prediction, latent_feat = self.model(self.propagation_matrix, self.features, pairs)
                 loss = torch.nn.functional.binary_cross_entropy_with_logits(prediction.squeeze(), label.float())
 
-                if self.base_run:
-                    loss = loss + self.model.calculate_group_loss()
-                else:
-                    loss = loss + self.model.calculate_loss()
-
+                loss = loss + self.model.calculate_group_loss()
                 loss_history.append(loss)
 
                 loss.backward()
@@ -121,7 +110,6 @@ class Trainer(object):
                         loss.cpu().detach().numpy()))
 
             roc_train = roc_auc_score(y_label_train, y_pred_train)
-            self.scheduler.step(epoch_loss)
 
             # validation after each epoch
             if not self.args.fastmode:
@@ -144,7 +132,6 @@ class Trainer(object):
                       'f1_val: {:.4f}'.format(f1_val),
                       'time: {:.4f}s'.format(time.time() - t))
 
-        plt.plot(loss_history)
         print("Optimization Finished!")
         print("Total time elapsed: {:.4f}s".format(time.time() - t_total))
 
@@ -188,7 +175,10 @@ class Trainer(object):
         """
         Scoring a neural network.
         :param indices: Indices of nodes involved in accuracy calculation.
-        :return acc: Accuracy score.
+        :return predictions: Probability for link existence
+                roc_score: Area under ROC curve
+                pr_score: Area under PR curve
+                f1_score: F1 score
         """
         self.model.eval()
         y_pred = []
@@ -219,14 +209,14 @@ class Trainer(object):
 
         for layer in self.model.upper_layers:
             norms = torch.norm(layer.weight_matrix ** 2, dim=0)
-            norms = norms[norms > 0.0315]
+            norms = norms[norms > self.args.cut_off]
             self.layer_sizes["upper"].append(norms.shape[0])
 
         self.layer_sizes["bottom"] = []
 
         for layer in self.model.bottom_layers:
             norms = torch.norm(layer.weight_matrix ** 2, dim=0)
-            norms = norms[norms > 0.19]
+            norms = norms[norms > self.args.cut_off]
             self.layer_sizes["bottom"].append(norms.shape[0])
 
         self.layer_sizes["upper"] = [int(self.args.budget * layer_size / sum(self.layer_sizes["upper"])) for layer_size
@@ -236,11 +226,3 @@ class Trainer(object):
         print("Layer 1.: " + str(tuple(self.layer_sizes["upper"])))
         print("Layer 2.: " + str(tuple(self.layer_sizes["bottom"])))
 
-    def reset_architecture(self):
-        """
-        Changing the layer sizes.
-        """
-        print("\nResetting the architecture.\n")
-        self.args.layers_1 = self.layer_sizes["upper"]
-        self.args.layers_2 = self.layer_sizes["bottom"]
-        return self.args

@@ -1,6 +1,3 @@
-"""NGCN and DenseNGCN layers."""
-
-import math
 import torch
 from torch_sparse import spmm
 
