@@ -94,12 +94,10 @@ class Trainer(object):
                 prediction, latent_feat = self.model(self.propagation_matrix, self.features, pairs)
                 loss = torch.nn.functional.binary_cross_entropy_with_logits(prediction.squeeze(), label.float())
 
-                loss = loss + self.model.calculate_group_loss()
-                loss_history.append(loss)
-
                 loss.backward()
                 self.optimizer.step()
                 epoch_loss += loss.item()
+                loss_history.append(loss)
 
                 label_ids = label.to('cpu').numpy()
                 y_label_train = y_label_train + label_ids.flatten().tolist()
@@ -197,32 +195,3 @@ class Trainer(object):
 
         return y_pred, roc_auc_score(y_label, y_pred), average_precision_score(y_label, y_pred), f1_score(y_label,
                                                                                                           outputs), loss
-
-    def evaluate_architecture(self):
-        """
-        Making a choice about the optimal layer sizes.
-        """
-        print("The best architecture is:\n")
-        self.layer_sizes = dict()
-
-        self.layer_sizes["upper"] = []
-
-        for layer in self.model.upper_layers:
-            norms = torch.norm(layer.weight_matrix ** 2, dim=0)
-            norms = norms[norms > self.args.cut_off]
-            self.layer_sizes["upper"].append(norms.shape[0])
-
-        self.layer_sizes["bottom"] = []
-
-        for layer in self.model.bottom_layers:
-            norms = torch.norm(layer.weight_matrix ** 2, dim=0)
-            norms = norms[norms > self.args.cut_off]
-            self.layer_sizes["bottom"].append(norms.shape[0])
-
-        self.layer_sizes["upper"] = [int(self.args.budget * layer_size / sum(self.layer_sizes["upper"])) for layer_size
-                                     in self.layer_sizes["upper"]]
-        self.layer_sizes["bottom"] = [int(self.args.budget * layer_size / sum(self.layer_sizes["bottom"])) for
-                                      layer_size in self.layer_sizes["bottom"]]
-        print("Layer 1.: " + str(tuple(self.layer_sizes["upper"])))
-        print("Layer 2.: " + str(tuple(self.layer_sizes["bottom"])))
-

@@ -40,9 +40,6 @@ Train HOGCN with the following command line arguments.</p>
   --early-stopping    INT     Early stopping rounds.         Default is 10.
   --learning-rate     FLOAT   Adam learning rate.            Default is 5e-4.
   --dropout           FLOAT   Dropout rate value.            Default is 0.1.
-  --lambd             FLOAT   Regularization coefficient.    Default is 0.0005.
-  --cut-off           FLOAT   Norm cut-off for pruning.      Default is 0.1.
-  --budget            INT     Architecture neuron budget.    Default is 60.
   --order             INT     Order of neighbor including 0  Default is 4.
   --dimension         INT     Dimension of each adjacency    Default is 32.
   --layers-1          LST     Layer sizes (first).           Default is [32, 32, 32, 32]. 

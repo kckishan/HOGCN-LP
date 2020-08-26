@@ -29,10 +29,6 @@ def parameter_parser():
                         help="Number of early stopping rounds. Default is 10.")
     parser.add_argument("--learning-rate", type=float, default=5e-4,
                         help="Learning rate. Default is 5e-4.")
-    parser.add_argument("--cut-off", type=float, default=0.1,
-                        help="Weight cut-off. Default is 0.1.")
-    parser.add_argument("--lambd", type=float, default=0.0005,
-                        help="L2 regularization coefficient. Default is 0.0005.")
     parser.add_argument("--layers-1", nargs="+", type=int,
                         help="Layer dimensions separated by space (top). E.g. 200 20.")
     parser.add_argument("--layers-2", nargs="+", type=int,
@@ -43,8 +39,6 @@ def parameter_parser():
                         help="Order of neighborhood including 0 (if order = 4, P ={0, 1, 2, 3}).  Default is 4.")
     parser.add_argument("--dimension", type=int, default=32,
                         help="Dimension for each adjacency. Default is 32.")
-    parser.add_argument("--budget", type=int, default=100,
-                        help="Architecture neuron allocation budget. Default is 100.")
 
     # parameter for training with different ratio
     parser.add_argument('--ratio', action='store_true', default=False,

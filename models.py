@@ -49,21 +49,6 @@ class MixHopNetwork(torch.nn.Module):
                                      nn.Linear(self.args.hidden2, 1)
                                      )
 
-    def calculate_group_loss(self):
-        """
-        Calculating the column losses.
-        """
-        weight_loss = 0
-        for i in range(self.order_1):
-            upper_column_loss = torch.norm(self.upper_layers[i].weight_matrix, dim=0)
-            loss_upper = torch.sum(upper_column_loss)
-            weight_loss = weight_loss + self.args.lambd * loss_upper
-        for i in range(self.order_2):
-            bottom_column_loss = torch.norm(self.bottom_layers[i].weight_matrix, dim=0)
-            loss_bottom = torch.sum(bottom_column_loss)
-            weight_loss = weight_loss + self.args.lambd * loss_bottom
-        return weight_loss
-
     def embed(self, normalized_adjacency_matrix, features):
         """
                 Forward pass.
