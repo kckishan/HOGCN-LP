@@ -25,12 +25,12 @@ The details about dataset used in the experiments are provided in [README](data/
 
 ### Training options
 <p align="justify">
-Training an N-GCN/MixHop model is handled by the `src/main.py` script which provides the following command line arguments.</p>
+Train HOGCN with the following command line arguments.</p>
 
 #### Input and output options
 ```
   --network_type      STR    Type of interaction network     Default is `DTI`.
-  --fold_id           INT    Run model on data fold          Default is 1.
+  --fold_id           INT    Run model on generated fold     Default is 1.
 ```
 #### Model options
 ```
@@ -49,7 +49,7 @@ Training an N-GCN/MixHop model is handled by the `src/main.py` script which prov
   --layers-2          LST     Layer sizes (second).          Default is [32, 32, 32, 32].
   --hidden1           INT     Output of bilinear layer       Default is 64.
   --hidden2           INT     Output of last linear layer    Default is 32.
-  --no-cuda           BOOL    Run on CPU                     Default is False.
+  --cuda              BOOL    Run on GPR                     Default is True.
   --fastmode          BOOL    Validate every epoch           Default is True
 ```
 
@@ -67,4 +67,4 @@ python3 main.py --network_type 'DTI' --order 4 --dimension 32
 ```
 
 ### Acknowledgement
-The code is based on [MixHop](https://github.com/benedekrozemberczki/MixHop-and-N-GCN) and [SkipGNN](https://github.com/kexinhuang12345/SkipGNN).
+The code is based on [MixHop](https://github.com/benedekrozemberczki/MixHop-and-N-GCN).

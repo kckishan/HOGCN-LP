@@ -9,7 +9,7 @@ def main():
     args = parameter_parser()
 
     # set arguments
-    args.cuda = not args.no_cuda and torch.cuda.is_available()
+    args.cuda = args.cuda and torch.cuda.is_available()
     args.device = torch.device("cuda:0" if args.cuda else "cpu")
     torch.manual_seed(args.seed)
     tab_printer(args)

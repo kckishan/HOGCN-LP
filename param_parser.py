@@ -5,7 +5,7 @@ import argparse
 
 def parameter_parser():
     parser = argparse.ArgumentParser(description="Run Higher Order GCN")
-    parser.add_argument('--no-cuda', action='store_true', default=False,
+    parser.add_argument('--cuda', action='store_false', default=True,
                         help='Disables CUDA training.')
     parser.add_argument('--fastmode', action='store_true', default=False,
                         help='Validate during training pass.')
