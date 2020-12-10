@@ -5,6 +5,7 @@ import argparse
 
 def parameter_parser():
     parser = argparse.ArgumentParser(description="Run Higher Order GCN")
+    parser.add_argument('--model', default="HOGCN")
     parser.add_argument('--cuda', action='store_false', default=True,
                         help='Disables CUDA training.')
     parser.add_argument('--fastmode', action='store_true', default=False,
@@ -46,8 +47,8 @@ def parameter_parser():
     parser.add_argument("--train_percent", type=int, default=10,
                         help="percentage of training edges. Default is 10.")
 
-    parser.set_defaults(layers_1=[parser.parse_known_args()[0].dimension]*parser.parse_known_args()[0].order)
-    parser.set_defaults(layers_2=[parser.parse_known_args()[0].dimension]*parser.parse_known_args()[0].order)
-
+    # 1 is added to include k = 0
+    parser.set_defaults(layers_1=[parser.parse_known_args()[0].dimension]*(parser.parse_known_args()[0].order + 1))
+    parser.set_defaults(layers_2=[parser.parse_known_args()[0].dimension]*(parser.parse_known_args()[0].order + 1))
 
     return parser.parse_args()
