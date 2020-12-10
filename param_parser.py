@@ -36,8 +36,8 @@ def parameter_parser():
                         help="Layer dimensions separated by space (bottom). E.g. 200 200.")
     parser.add_argument("--fold_id", type=int, default=1,
                         help="Identifier to preprocessed splits. Default is 1.")
-    parser.add_argument("--order", type=int, default=4,
-                        help="Order of neighborhood including 0 (if order = 4, P ={0, 1, 2, 3}).  Default is 4.")
+    parser.add_argument("--order", type=int, default=3,
+                        help="Order of neighborhood including 0 (if order = 3, P ={0, 1, 2, 3}).  Default is 3.")
     parser.add_argument("--dimension", type=int, default=32,
                         help="Dimension for each adjacency. Default is 32.")
 
