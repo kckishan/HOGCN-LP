@@ -70,11 +70,14 @@ The code is based on [MixHop](https://github.com/benedekrozemberczki/MixHop-and-
 
 If you find this code useful, please cite us as:
 
-@misc{kc2020predicting,
+    @misc{kc2020predicting,
       title={Predicting Biomedical Interactions with Higher-Order Graph Convolutional Networks}, 
       author={Kishan KC and Rui Li and Feng Cui and Anne Haake},
       year={2020},
       eprint={2010.08516},
       archivePrefix={arXiv},
       primaryClass={cs.LG}
-}
+     }
+
+
+
