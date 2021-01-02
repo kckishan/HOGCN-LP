@@ -60,8 +60,24 @@ python3 main.py
 - Train HOGCN on DTI network with order `3` and dimension `32` for each adjacency power
 
 ```train
-python3 main.py --network_type 'DTI' --order 4 --dimension 32 
+python3 main.py --network_type 'DTI' --order 3 --dimension 32 
 ```
+
+Note that order = 3 indicates P = {0, 1, 2, 3}.
 
 ### Acknowledgement
 The code is based on [MixHop](https://github.com/benedekrozemberczki/MixHop-and-N-GCN).
+
+If you find this code useful, please cite us as:
+
+    @misc{kc2020predicting,
+      title={Predicting Biomedical Interactions with Higher-Order Graph Convolutional Networks}, 
+      author={Kishan KC and Rui Li and Feng Cui and Anne Haake},
+      year={2020},
+      eprint={2010.08516},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG}
+     }
+
+
+

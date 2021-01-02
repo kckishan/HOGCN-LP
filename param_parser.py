@@ -37,7 +37,7 @@ def parameter_parser():
     parser.add_argument("--fold_id", type=int, default=1,
                         help="Identifier to preprocessed splits. Default is 1.")
     parser.add_argument("--order", type=int, default=3,
-                        help="Order of neighborhood (if order = 3, P ={0, 1, 2, 3}).  Default is 4.")
+                        help="Order of neighborhood (if order = 3, P ={0, 1, 2, 3}).  Default is 3.")
     parser.add_argument("--dimension", type=int, default=32,
                         help="Dimension for each adjacency. Default is 32.")
 
