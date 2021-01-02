@@ -36,7 +36,7 @@ def normalize_adjacency_matrix(A, I):
     :param I: Identity matrix.
     :return A_tile_hat: Normalized adjacency matrix.
     """
-    A_tilde = A + 2 * I
+    A_tilde = A + I
     degrees = A_tilde.sum(axis=0)[0].tolist()
     D = sp.diags(degrees, [0])
     D = D.power(-0.5)
@@ -181,19 +181,15 @@ def load_data_link_prediction_DDI(path, network_type, inp, device):
     edges_unordered = df_data_t[['Drug1_ID', 'Drug2_ID']].values
 
     if inp == 'node2vec':
-        emb = pd.read_csv(path + '/ddi.emb', skiprows=1, header=None, sep=' ').sort_values(by=[0]).set_index([0])
-        new_index = [idx_map[idx] for idx in emb.index]
-        emb = emb.reindex(new_index)
-
+        emb = pd.read_csv(path + 'ddi.emb', skiprows=1, header=None, sep=' ').sort_values(by=[0]).set_index([0])
         for i in np.setdiff1d(np.arange(1514), emb.index.values):
             emb.loc[i] = (np.sum(emb.values, axis=0) / emb.values.shape[0])
-
         features = emb.sort_index().values
         features = normalize(features)
+        features = torch.FloatTensor(features)
     elif inp == 'one_hot':
         features = np.eye(1514)
-
-    features = features_to_sparse(features, device)
+        features = features_to_sparse(features, device)
 
     edges = np.array(list(map(idx_map.get, edges_unordered.flatten()))).reshape(edges_unordered.shape)
     adj = sp.coo_matrix((np.ones(edges.shape[0]), (edges[:, 0], edges[:, 1])),
@@ -221,18 +217,15 @@ def load_data_link_prediction_PPI(path, network_type, inp, device):
     edges_unordered = df_data_t[['Protein1_ID', 'Protein2_ID']].values
 
     if inp == 'node2vec':
-        emb = pd.read_csv(path + '/ppi.emb', skiprows=1, header=None, sep=' ').sort_values(by=[0]).set_index([0])
-        new_index = [idx_map[idx] for idx in emb.index]
-        emb = emb.reindex(new_index)
-
+        emb = pd.read_csv(path + 'ppi.emb', skiprows=1, header=None, sep=' ').sort_values(by=[0]).set_index([0])
         for i in np.setdiff1d(np.arange(5604), emb.index.values):
             emb.loc[i] = (np.sum(emb.values, axis=0) / emb.values.shape[0])
         features = emb.sort_index().values
         features = normalize(features)
+        features = torch.FloatTensor(features)
     elif inp == 'one_hot':
         features = np.eye(5604)
-
-    features = features_to_sparse(features, device)
+        features = features_to_sparse(features, device)
 
 
     edges = np.array(list(map(idx_map.get, edges_unordered.flatten()))).reshape(edges_unordered.shape)
@@ -261,19 +254,16 @@ def load_data_link_prediction_DTI(path, network_type, inp, device):
     edges_unordered = df_data_t[['Drug_ID', 'Protein_ID']].values
 
     if inp == 'node2vec':
-        emb = pd.read_csv(path + '/dti.emb', skiprows=1, header=None, sep=' ').sort_values(by=[0]).set_index([0])
-        new_index = [idx_map[idx] for idx in emb.index]
-        emb = emb.reindex(new_index)
-
+        emb = pd.read_csv(path + 'dti.emb', skiprows=1, header=None, sep=' ').sort_values(by=[0]).set_index([0])
         for i in np.setdiff1d(np.arange(7343), emb.index.values):
             emb.loc[i] = (np.sum(emb.values, axis=0) / emb.values.shape[0])
         features = emb.sort_index().values
 
         features = normalize(features)
+        features = torch.FloatTensor(features)
     elif inp == 'one_hot':
         features = np.eye(7343)
-
-    features = features_to_sparse(features, device)
+        features = features_to_sparse(features, device)
 
     edges = np.array(list(map(idx_map.get, edges_unordered.flatten()))).reshape(edges_unordered.shape)
     adj = sp.coo_matrix((np.ones(edges.shape[0]), (edges[:, 0], edges[:, 1])),
@@ -300,18 +290,15 @@ def load_data_link_prediction_GDI(path, network_type, inp, device):
     edges_unordered = df_data_t[['Gene_ID', 'Disease_ID']].values
 
     if inp == 'node2vec':
-        emb = pd.read_csv(path + '/gdi.emb', skiprows=1, header=None, sep=' ').sort_values(by=[0]).set_index([0])
-        new_index = [idx_map[idx] for idx in emb.index]
-        emb = emb.reindex(new_index)
-
+        emb = pd.read_csv(path + 'gdi.emb', skiprows=1, header=None, sep=' ').sort_values(by=[0]).set_index([0])
         for i in np.setdiff1d(np.arange(19783), emb.index.values):
             emb.loc[i] = (np.sum(emb.values, axis=0) / emb.values.shape[0])
         features = emb.sort_index().values
         features = normalize(features)
+        features = torch.FloatTensor(features)
     elif inp == 'one_hot':
         features = np.eye(19783)
-
-    features = features_to_sparse(features, device)
+        features = features_to_sparse(features, device)
 
     edges = np.array(list(map(idx_map.get, edges_unordered.flatten()))).reshape(edges_unordered.shape)
 

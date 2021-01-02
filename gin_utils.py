@@ -4,7 +4,7 @@ import torch
 from torch.utils import data
 import pandas as pd
 from texttable import Texttable
-
+import networkx as nx
 
 
 def tab_printer(args):
@@ -36,7 +36,7 @@ def normalize_adjacency_matrix(A, I):
     :param I: Identity matrix.
     :return A_tile_hat: Normalized adjacency matrix.
     """
-    A_tilde = A + 2 * I
+    A_tilde = A + I
     degrees = A_tilde.sum(axis=0)[0].tolist()
     D = sp.diags(degrees, [0])
     D = D.power(-0.5)
@@ -181,30 +181,22 @@ def load_data_link_prediction_DDI(path, network_type, inp, device):
     edges_unordered = df_data_t[['Drug1_ID', 'Drug2_ID']].values
 
     if inp == 'node2vec':
-        emb = pd.read_csv(path + '/ddi.emb', skiprows=1, header=None, sep=' ').sort_values(by=[0]).set_index([0])
-        new_index = [idx_map[idx] for idx in emb.index]
-        emb = emb.reindex(new_index)
-
+        emb = pd.read_csv(path + 'ddi.emb', skiprows=1, header=None, sep=' ').sort_values(by=[0]).set_index([0])
         for i in np.setdiff1d(np.arange(1514), emb.index.values):
             emb.loc[i] = (np.sum(emb.values, axis=0) / emb.values.shape[0])
-
         features = emb.sort_index().values
         features = normalize(features)
+        features = torch.FloatTensor(features)
     elif inp == 'one_hot':
         features = np.eye(1514)
-
-    features = features_to_sparse(features, device)
+        features = torch.FloatTensor(features).to(device)
 
     edges = np.array(list(map(idx_map.get, edges_unordered.flatten()))).reshape(edges_unordered.shape)
-    adj = sp.coo_matrix((np.ones(edges.shape[0]), (edges[:, 0], edges[:, 1])),
+    coo_adj = sp.coo_matrix((np.ones(edges.shape[0]), (edges[:, 0], edges[:, 1])),
                         shape=(len(idx), len(idx)),
                         dtype=np.float32)
 
-    # build symmetric adjacency matrix
-    adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj)
-    adj = create_propagator_matrix(adj, device)
-
-    return adj, features, idx_map
+    return coo_adj, features, idx_map
 
 
 def load_data_link_prediction_PPI(path, network_type, inp, device):
@@ -221,30 +213,24 @@ def load_data_link_prediction_PPI(path, network_type, inp, device):
     edges_unordered = df_data_t[['Protein1_ID', 'Protein2_ID']].values
 
     if inp == 'node2vec':
-        emb = pd.read_csv(path + '/ppi.emb', skiprows=1, header=None, sep=' ').sort_values(by=[0]).set_index([0])
-        new_index = [idx_map[idx] for idx in emb.index]
-        emb = emb.reindex(new_index)
-
+        emb = pd.read_csv(path + 'ppi.emb', skiprows=1, header=None, sep=' ').sort_values(by=[0]).set_index([0])
         for i in np.setdiff1d(np.arange(5604), emb.index.values):
             emb.loc[i] = (np.sum(emb.values, axis=0) / emb.values.shape[0])
         features = emb.sort_index().values
         features = normalize(features)
+        features = torch.FloatTensor(features)
     elif inp == 'one_hot':
         features = np.eye(5604)
-
-    features = features_to_sparse(features, device)
+        features = torch.FloatTensor(features).to(device)
 
 
     edges = np.array(list(map(idx_map.get, edges_unordered.flatten()))).reshape(edges_unordered.shape)
-    adj = sp.coo_matrix((np.ones(edges.shape[0]), (edges[:, 0], edges[:, 1])),
+    coo_adj = sp.coo_matrix((np.ones(edges.shape[0]), (edges[:, 0], edges[:, 1])),
                         shape=(len(idx), len(idx)),
                         dtype=np.float32)
 
-    # build symmetric adjacency matrix
-    adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj)
-    adj = create_propagator_matrix(adj, device)
 
-    return adj, features, idx_map
+    return coo_adj, features, idx_map
 
 
 def load_data_link_prediction_DTI(path, network_type, inp, device):
@@ -261,29 +247,23 @@ def load_data_link_prediction_DTI(path, network_type, inp, device):
     edges_unordered = df_data_t[['Drug_ID', 'Protein_ID']].values
 
     if inp == 'node2vec':
-        emb = pd.read_csv(path + '/dti.emb', skiprows=1, header=None, sep=' ').sort_values(by=[0]).set_index([0])
-        new_index = [idx_map[idx] for idx in emb.index]
-        emb = emb.reindex(new_index)
-
+        emb = pd.read_csv(path + 'dti.emb', skiprows=1, header=None, sep=' ').sort_values(by=[0]).set_index([0])
         for i in np.setdiff1d(np.arange(7343), emb.index.values):
             emb.loc[i] = (np.sum(emb.values, axis=0) / emb.values.shape[0])
         features = emb.sort_index().values
 
         features = normalize(features)
+        features = torch.FloatTensor(features)
     elif inp == 'one_hot':
         features = np.eye(7343)
-
-    features = features_to_sparse(features, device)
+        features = torch.FloatTensor(features).to(device)
 
     edges = np.array(list(map(idx_map.get, edges_unordered.flatten()))).reshape(edges_unordered.shape)
-    adj = sp.coo_matrix((np.ones(edges.shape[0]), (edges[:, 0], edges[:, 1])),
+    coo_adj = sp.coo_matrix((np.ones(edges.shape[0]), (edges[:, 0], edges[:, 1])),
                         shape=(len(idx), len(idx)),
                         dtype=np.float32)
 
-    # build symmetric adjacency matrix
-    adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj)
-    adj = create_propagator_matrix(adj, device)
-    return adj, features, idx_map
+    return coo_adj, features, idx_map
 
 
 def load_data_link_prediction_GDI(path, network_type, inp, device):
@@ -300,30 +280,53 @@ def load_data_link_prediction_GDI(path, network_type, inp, device):
     edges_unordered = df_data_t[['Gene_ID', 'Disease_ID']].values
 
     if inp == 'node2vec':
-        emb = pd.read_csv(path + '/gdi.emb', skiprows=1, header=None, sep=' ').sort_values(by=[0]).set_index([0])
-        new_index = [idx_map[idx] for idx in emb.index]
-        emb = emb.reindex(new_index)
-
+        emb = pd.read_csv(path + 'gdi.emb', skiprows=1, header=None, sep=' ').sort_values(by=[0]).set_index([0])
         for i in np.setdiff1d(np.arange(19783), emb.index.values):
             emb.loc[i] = (np.sum(emb.values, axis=0) / emb.values.shape[0])
         features = emb.sort_index().values
         features = normalize(features)
+        features = torch.FloatTensor(features)
     elif inp == 'one_hot':
         features = np.eye(19783)
-
-    features = features_to_sparse(features, device)
+        features = torch.FloatTensor(features).to(device)
 
     edges = np.array(list(map(idx_map.get, edges_unordered.flatten()))).reshape(edges_unordered.shape)
 
-    adj = sp.coo_matrix((np.ones(edges.shape[0]), (edges[:, 0], edges[:, 1])),
+    coo_adj = sp.coo_matrix((np.ones(edges.shape[0]), (edges[:, 0], edges[:, 1])),
                         shape=(len(idx), len(idx)),
                         dtype=np.float32)
 
-    # build symmetric adjacency matrix
-    adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj)
-    adj = create_propagator_matrix(adj, device)
+    return coo_adj, features, idx_map
 
-    return adj, features, idx_map
+def adj_list_from_dict(graph):
+    G = nx.from_dict_of_lists(graph)
+    coo_adj = nx.to_scipy_sparse_matrix(G).tocoo()
+    indices = torch.from_numpy(np.vstack((coo_adj.row, coo_adj.col)).astype(np.int64))
+    return indices
+
+
+def add_self_loops(edge_list, size):
+    i = torch.arange(size, dtype=torch.int64).view(1, -1)
+    self_loops = torch.cat((i, i), dim=0)
+    edge_list = torch.cat((edge_list, self_loops), dim=1)
+    return edge_list
+
+
+def get_degree(edge_list):
+    row, col = edge_list
+    deg = torch.bincount(row)
+    return deg
+
+
+def normalize_adj(edge_list):
+    deg = get_degree(edge_list)
+    row, col = edge_list
+    deg_inv_sqrt = torch.pow(deg.to(torch.float), -0.5)
+    deg_inv_sqrt[deg_inv_sqrt == float('inf')] = 0.0
+    weight = torch.ones(edge_list.size(1))
+    v = deg_inv_sqrt[row] * weight * deg_inv_sqrt[col]
+    norm_adj = torch.sparse.FloatTensor(edge_list, v)
+    return norm_adj
 
 def load_data(args):
 
@@ -343,4 +346,8 @@ def load_data(args):
     elif args.network_type == 'GDI':
         adj, features, idx_map = load_data_link_prediction_GDI(data_path, args.network_type, args.input_type, args.device)
         Data_class = Data_GDI
-    return adj, features, idx_map, Data_class
+
+    edge_list = torch.from_numpy(np.vstack((adj.row, adj.col)).astype(np.int64))
+    edge_list = add_self_loops(edge_list, features.size(0))
+
+    return edge_list, features, idx_map, Data_class

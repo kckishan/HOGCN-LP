@@ -2,8 +2,8 @@ import torch
 import numpy as np
 import pandas as pd
 from torch.utils import data
-from utils import load_data
-from models import MixHopNetwork
+from gat_utils import load_data
+from GAT import SPGAT
 from sklearn.metrics import roc_auc_score, average_precision_score, f1_score
 import os
 import time
@@ -19,7 +19,7 @@ class Trainer(object):
         self.args = args
         self.device = self.args.device
         self.setup_features()
-        self.model = MixHopNetwork(self.args, self.feature_number, 1)
+        self.model = SPGAT(self.args, self.feature_number, 1)
         self.model = self.model.to(self.device)
         print(self.model)
 
@@ -29,7 +29,8 @@ class Trainer(object):
         """
         # Load data
         self.propagation_matrix, self.features, self.idx_map, Data_class = load_data(self.args)
-
+        self.propagation_matrix = self.propagation_matrix.to(self.device)
+        self.features = self.features.to(self.device)
         train_params = {'batch_size': self.args.batch_size,
                         'shuffle': True,
                         'num_workers': 6,
@@ -57,13 +58,13 @@ class Trainer(object):
         test_set = Data_class(self.idx_map, df_test.label.values, df_test)
         self.test_loader = data.DataLoader(test_set, **test_params)
 
-        self.feature_number = self.features["dimensions"][1]
+        self.feature_number = self.features.shape[1]
 
         # saving the results
         if self.args.ratio:
-            self.model_save_folder = f"trained_models/{self.args.model}/network_{self.args.network_type}/{self.args.train_percent}/order_{len(self.args.layers_1)}/fold{self.args.fold_id}/"
+            self.model_save_folder = f"trained_models/network_{self.args.network_type}/{self.args.train_percent}/order_{len(self.args.layers_1)}/fold{self.args.fold_id}/"
         else:
-            self.model_save_folder = f"trained_models/{self.args.model}/network_{self.args.network_type}/order_{len(self.args.layers_1)}/fold{self.args.fold_id}/"
+            self.model_save_folder = f"trained_models/network_{self.args.network_type}/order_{len(self.args.layers_1)}/fold{self.args.fold_id}/"
 
         if not os.path.exists(self.model_save_folder):
             os.makedirs(self.model_save_folder)
@@ -104,8 +105,8 @@ class Trainer(object):
                 y_pred_train = y_pred_train + prediction.flatten().tolist()
 
                 if i % 100 == 0:
-                    print('Epoch: ' + str(epoch + 1) + '/' + str(self.args.epochs) + ' Iteration: ' + str(i + 1) + '/' +
-                          str(len(self.train_loader)) + ' Training loss: ' + str(loss.cpu().detach().numpy()))
+                    print('epoch: ' + str(epoch + 1) + '/ iteration: ' + str(i + 1) + '/ loss_train: ' + str(
+                        loss.cpu().detach().numpy()))
 
             roc_train = roc_auc_score(y_label_train, y_pred_train)
 
@@ -140,11 +141,11 @@ class Trainer(object):
               'auprc_test: {:.4f}'.format(prc_test), 'f1_test: {:.4f}'.format(f1_test))
 
         # saving the results
-        results = {"auroc": auroc_test, "pr": prc_test, "f1": f1_test}
+        results = {"prediction": prediction, "auroc": auroc_test, "pr": prc_test, "f1": f1_test}
         if self.args.ratio:
-            save_folder = f"results/{self.args.model}/network_{self.args.network_type}/{self.args.train_percent}/order_{len(self.args.layers_1)}/"
+            save_folder = f"results/network_{self.args.network_type}/{self.args.train_percent}/order_{len(self.args.layers_1)}/"
         else:
-            save_folder = f"results/{self.args.model}/network_{self.args.network_type}/order_{len(self.args.layers_1)}/"
+            save_folder = f"results/network_{self.args.network_type}/order_{len(self.args.layers_1)}/"
 
         if not os.path.exists(save_folder):
             os.makedirs(save_folder)
@@ -154,15 +155,13 @@ class Trainer(object):
         torch.save(results, file_name)
 
         # saving embeddings
-        with torch.no_grad():
-            self.model.eval()
-            latent_features = self.model.embed(self.propagation_matrix, self.features)
-            embeddings = {"idxmap": self.idx_map, "emb": latent_features}
+        latent_features = self.model.embed(self.features, self.propagation_matrix)
+        embeddings = {"idxmap": self.idx_map, "emb": latent_features}
 
         if self.args.ratio:
-            emb_folder = f"embeddings/{self.args.model}/network_{self.args.network_type}/{self.args.train_percent}/order_{len(self.args.layers_1)}/"
+            emb_folder = f"embeddings/network_{self.args.network_type}/{self.args.train_percent}/order_{len(self.args.layers_1)}/"
         else:
-            emb_folder = f"embeddings/{self.args.model}/network_{self.args.network_type}/order_{len(self.args.layers_1)}/"
+            emb_folder = f"embeddings/network_{self.args.network_type}/order_{len(self.args.layers_1)}/"
 
         if not os.path.exists(emb_folder):
             os.makedirs(emb_folder)
@@ -188,7 +187,7 @@ class Trainer(object):
             label = label.to(self.device)
             output, latent_feat = self.model(self.propagation_matrix, self.features, pairs)
 
-            loss = torch.nn.functional.binary_cross_entropy_with_logits(output.squeeze(), label.float().squeeze())
+            loss = torch.nn.functional.binary_cross_entropy_with_logits(output.squeeze(), label.float())
 
             label_ids = label.to('cpu').numpy()
             y_label = y_label + label_ids.flatten().tolist()
