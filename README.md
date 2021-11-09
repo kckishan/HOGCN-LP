@@ -21,7 +21,7 @@ texttable               1.6.2
 ```
 
 ### Datasets
-The details about dataset used in the experiments are provided in [README](data/README.md).
+The details about dataset used in the experiments are provided in [README](https://github.com/kexinhuang12345/SkipGNN#dataset).
 
 ### Training options
 <p align="justify">
